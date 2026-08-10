@@ -1,0 +1,15 @@
+services:
+  db:                                  # service name; we can refer to it as "db"
+    image: pgvector/pgvector:pg16      # Postgres 16 with the vector extension prebuilt
+    container_name: mechanic_db        # fixed name so commands are predictable
+    environment:                       # these configure Postgres on first boot
+      POSTGRES_USER: mechanic          # dev-only creds (NOT for production)
+      POSTGRES_PASSWORD: mechanic
+      POSTGRES_DB: mechanic            # auto-creates a database with this name
+    ports:
+      - "5432:5432"                    # HOST:CONTAINER — reach the DB at localhost:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # persist DB files in a named volume
+
+volumes:
+  pgdata:                              # declares the named volume used above
