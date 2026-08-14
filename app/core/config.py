@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # The type annotation IS the validation: APP_PORT must parse as int.
     app_name: str          # no default -> REQUIRED. Missing => startup error.
     app_port: int = 8000   # default -> optional. Used if env var absent.
+    database_url: str   # full Postgres connection string; required (no default)
 
 
 # Create ONE shared instance the whole app imports. Built once at startup,

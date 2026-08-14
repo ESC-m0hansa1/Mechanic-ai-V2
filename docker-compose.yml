@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: mechanic
       POSTGRES_DB: mechanic            # auto-creates a database with this name
     ports:
-      - "5432:5432"                    # HOST:CONTAINER — reach the DB at localhost:5432
+      - "5433:5432"                    # HOST:CONTAINER — reach the DB at localhost:5432
     volumes:
       - pgdata:/var/lib/postgresql/data  # persist DB files in a named volume
 

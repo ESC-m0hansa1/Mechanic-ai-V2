@@ -1,3 +1,10 @@
 # Target: Python 3.12 (3.11 per spec not installed; 3.12 nearest ML-supported)
 fastapi==0.115.0
 uvicorn[standard]==0.32.0
+# PDF text extraction (pure-Python, simple)
+pypdf==5.1.0
+# local embedding model runner (pulls torch); model: BAAI/bge-small-en-v1.5
+sentence-transformers==3.3.1
+# Postgres driver + pgvector type adapter for Python
+psycopg[binary]==3.2.3
+pgvector==0.3.6
