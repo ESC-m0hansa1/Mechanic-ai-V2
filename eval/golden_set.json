@@ -1,0 +1,170 @@
+[
+  {
+    "question": "How do I check the engine oil level?",
+    "relevant_chunk_ids": [805, 806, 807],
+    "probe": "neutral",
+    "why": "p567-569 is the dipstick procedure: park level, wait 5 min, read, top up."
+  },
+  {
+    "question": "Where are the jack and tools stored in the vehicle?",
+    "relevant_chunk_ids": [954],
+    "probe": "neutral",
+    "why": "p677 lists storage per cab type (single/smart/double)."
+  },
+  {
+    "question": "I got a flat tyre on the highway - what should I do first?",
+    "relevant_chunk_ids": [953],
+    "probe": "paraphrase",
+    "why": "p676 = stop safely, parking brake, P or R, stop engine, hazards. Says 'tire', question says 'tyre'."
+  },
+  {
+    "question": "My truck won't turn over when I press the start button. Why?",
+    "relevant_chunk_ids": [973, 975],
+    "probe": "paraphrase",
+    "why": "p693-694 'If the engine will not start' - no manual wording overlaps 'won't turn over'."
+  },
+  {
+    "question": "How do I jump start the vehicle when the battery is discharged?",
+    "relevant_chunk_ids": [982],
+    "probe": "exact-term",
+    "why": "p699 jumper/booster cable procedure."
+  },
+  {
+    "question": "Which battery terminal do I disconnect first?",
+    "relevant_chunk_ids": [989],
+    "probe": "neutral",
+    "why": "p704 WARNING: always remove the negative terminal first."
+  },
+  {
+    "question": "Can I tow the vehicle myself if no tow truck is available?",
+    "relevant_chunk_ids": [912, 913],
+    "probe": "neutral",
+    "why": "p654 emergency towing hooks, 80 km / hard surfaced roads only."
+  },
+  {
+    "question": "What happens to the brakes and steering while the vehicle is being towed?",
+    "relevant_chunk_ids": [914],
+    "probe": "neutral",
+    "why": "p655: no power assist when the engine is not running."
+  },
+  {
+    "question": "How do I open the fuel tank cap?",
+    "relevant_chunk_ids": [455, 458],
+    "probe": "neutral",
+    "why": "p322 pre-conditions, p324 pull the opener and turn the cap slowly."
+  },
+  {
+    "question": "What safety precautions should I follow while refuelling?",
+    "relevant_chunk_ids": [456, 457],
+    "probe": "paraphrase",
+    "why": "p323 static-electricity warnings. Manual spells it 'refueling' (US), question uses 'refuelling'."
+  },
+  {
+    "question": "How do I use the rear differential lock switch?",
+    "relevant_chunk_ids": [564, 565],
+    "probe": "exact-term",
+    "why": "p395-396: press to lock, indicator on, try L4 first."
+  },
+  {
+    "question": "How often should the tires be rotated?",
+    "relevant_chunk_ids": [836],
+    "probe": "neutral",
+    "why": "p591: roughly every 10000 km / 6000 miles."
+  },
+  {
+    "question": "What does the tire pressure warning system actually detect?",
+    "relevant_chunk_ids": [837],
+    "probe": "exact-term",
+    "why": "p592: warning valves and transmitters detect low inflation pressure."
+  },
+  {
+    "question": "How do I pair my phone with the audio system over Bluetooth?",
+    "relevant_chunk_ids": [684, 685],
+    "probe": "paraphrase",
+    "why": "p472 says 'Registering a Bluetooth device' and 'Pairing' - question says 'pair my phone'."
+  },
+  {
+    "question": "How does the engine immobilizer system work?",
+    "relevant_chunk_ids": [225, 226],
+    "probe": "exact-term",
+    "why": "p157-158, both with and without smart entry & start."
+  },
+  {
+    "question": "What should I avoid during the break-in period of a new vehicle?",
+    "relevant_chunk_ids": [346],
+    "probe": "exact-term",
+    "why": "p250 'Breaking in your new Toyota': first 300 km / 800 km limits."
+  },
+  {
+    "question": "How do I install a child seat using the seat belt?",
+    "relevant_chunk_ids": [177, 178],
+    "probe": "paraphrase",
+    "why": "p122; manual says 'child restraint system', question says 'child seat'."
+  },
+  {
+    "question": "Where are the ISOFIX lower anchorages located?",
+    "relevant_chunk_ids": [181],
+    "probe": "exact-term",
+    "why": "p124: provided for the outboard rear seats, tagged on the seats."
+  },
+  {
+    "question": "A warning light just came on while driving. What should I do?",
+    "relevant_chunk_ids": [921, 922],
+    "probe": "neutral",
+    "why": "p660: stay calm, follow the listed actions, stop safely and contact the dealer."
+  },
+  {
+    "question": "The temperature needle is climbing towards hot - what is that gauge telling me?",
+    "relevant_chunk_ids": [253],
+    "probe": "paraphrase",
+    "why": "p180 engine coolant temperature gauge. No lexical overlap with 'needle climbing'."
+  },
+  {
+    "question": "What precautions apply when refilling AdBlue?",
+    "relevant_chunk_ids": [834],
+    "probe": "exact-term",
+    "why": "p589 NOTICE: only AdBlue, never another urea solution."
+  },
+  {
+    "question": "I lost my keys. What are my options?",
+    "relevant_chunk_ids": [1070],
+    "probe": "neutral",
+    "why": "p776 troubleshooting: the dealer can make new genuine keys."
+  },
+  {
+    "question": "What parts and tools do I need for do-it-yourself maintenance?",
+    "relevant_chunk_ids": [794],
+    "probe": "exact-term",
+    "why": "p558 do-it-yourself service precautions with the parts/tools table."
+  },
+  {
+    "question": "Can I tow a trailer if my vehicle has no towing hitch?",
+    "relevant_chunk_ids": [367],
+    "probe": "exact-term",
+    "why": "p260 'Trailer towing (without towing hitch)' incl. market/model exclusions."
+  },
+  {
+    "question": "How do I make sourdough bread at home?",
+    "relevant_chunk_ids": [],
+    "probe": "unanswerable",
+    "why": "Nothing in a vehicle manual answers this; the system should refuse."
+  },
+  {
+    "question": "What is the capital of France?",
+    "relevant_chunk_ids": [],
+    "probe": "unanswerable",
+    "why": "General knowledge the model knows but the manual does not - tests grounding, not knowledge."
+  },
+  {
+    "question": "How do I reset the password on my Windows laptop?",
+    "relevant_chunk_ids": [],
+    "probe": "unanswerable",
+    "why": "Adjacent vocabulary ('reset', 'system') without a real answer - a harder refusal."
+  },
+  {
+    "question": "What is the current resale price of a used HILUX in Delhi?",
+    "relevant_chunk_ids": [],
+    "probe": "unanswerable",
+    "why": "On-topic vehicle words, answer not in the manual: the hardest refusal case."
+  }
+]

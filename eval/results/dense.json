@@ -1,0 +1,17 @@
+{
+  "strategy": "dense",
+  "k": 5,
+  "answerable_questions": 24,
+  "unanswerable_questions": 4,
+  "hit_at_1": 0.542,
+  "hit_at_3": 1.0,
+  "hit_at_k": 1.0,
+  "recall_at_k": 0.896,
+  "mrr": 0.757,
+  "latency_p50_ms": 66.8,
+  "latency_p95_ms": 108.3,
+  "refusal_threshold": 0.6438,
+  "refusal_accuracy": 0.964,
+  "top1_answerable_mean": 0.7685,
+  "top1_unanswerable_mean": 0.582
+}
