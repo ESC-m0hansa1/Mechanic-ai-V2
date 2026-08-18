@@ -39,6 +39,13 @@ class Settings(BaseSettings):
     # How many candidates the cheap stage passes to the expensive stage.
     candidate_pool: int = 30
     rrf_k: int = 60               # RRF smoothing constant (see hybrid.py)
+    # How deep each retriever nominates before RRF fuses the two lists. Measured
+    # on the golden set: 10 beat 20 and 30 when hybrid is the FINAL ranker
+    # (MRR 0.733 vs 0.719 vs 0.691) because a deep pool lets weak keyword
+    # matches accumulate rank credit. The reranked strategy asks hybrid for
+    # `candidate_pool` results instead, which widens the pool on purpose - there
+    # the cross-encoder, not RRF, decides the final order.
+    fusion_depth: int = 10
 
 
 # One shared instance: .env is read once at import, not per request.

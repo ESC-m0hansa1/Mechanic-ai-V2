@@ -1,0 +1,17 @@
+{
+  "strategy": "hybrid",
+  "k": 5,
+  "answerable_questions": 24,
+  "unanswerable_questions": 4,
+  "hit_at_1": 0.583,
+  "hit_at_3": 0.875,
+  "hit_at_k": 1.0,
+  "recall_at_k": 0.896,
+  "mrr": 0.733,
+  "latency_p50_ms": 116.1,
+  "latency_p95_ms": 135.5,
+  "refusal_threshold": 0.0313,
+  "refusal_accuracy": 0.893,
+  "top1_answerable_mean": 0.0305,
+  "top1_unanswerable_mean": 0.02
+}

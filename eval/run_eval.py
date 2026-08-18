@@ -110,6 +110,33 @@ def evaluate(strategy: str, k: int, cases: list[dict]) -> dict:
 
 
 
+def breakdown_by_probe(strategy: str, k: int, cases: list[dict]) -> dict[str, dict]:
+    """MRR split by question type, which is where the real story lives.
+
+    The golden set tags each question as `exact-term` (uses the manual's own
+    jargon: ISOFIX, AdBlue, 1GD-FTV) or `paraphrase` (deliberately avoids it:
+    "my truck won't turn over"). The whole argument for adding BM25 is that it
+    should win the first group and lose the second. An aggregate number cannot
+    confirm or refute that; this can.
+    """
+    settings.retrieval_strategy = strategy
+    search("warm up the embedding model", 1)
+
+    groups: dict[str, list[float]] = {}
+    for case in cases:
+        relevant = set(case["relevant_chunk_ids"])
+        if not relevant:
+            continue
+        results = search(case["question"], k)
+        rr = reciprocal_rank([r["id"] for r in results], relevant)
+        groups.setdefault(case.get("probe", "neutral"), []).append(rr)
+
+    return {
+        probe: {"n": len(rrs), "mrr": round(sum(rrs) / len(rrs), 3)}
+        for probe, rrs in sorted(groups.items())
+    }
+
+
 def print_table(rows: list[dict]) -> None:
     """Emit markdown so the README table is copy-pasted, never hand-typed."""
     print()
@@ -127,6 +154,8 @@ def main() -> None:
     parser.add_argument("--strategy", default=None, choices=sorted(STRATEGIES))
     parser.add_argument("--all", action="store_true", help="evaluate every strategy")
     parser.add_argument("--k", type=int, default=5)
+    parser.add_argument("--breakdown", action="store_true",
+                        help="also report MRR split by question type")
     args = parser.parse_args()
 
     cases = load_golden_set()
@@ -149,6 +178,16 @@ def main() -> None:
               f"p95={row['latency_p95_ms']}ms  "
               f"refusal_acc={row['refusal_accuracy']} @cut={row['refusal_threshold']}")
     print_table(rows)
+
+    if args.breakdown:
+        print("MRR by question type:")
+        for name in strategies:
+            parts = breakdown_by_probe(name, args.k, cases)
+            summary = "  ".join(
+                f"{probe}={v['mrr']} (n={v['n']})" for probe, v in parts.items()
+            )
+            print(f"  {name:<9} {summary}")
+        print()
 
 
 if __name__ == "__main__":

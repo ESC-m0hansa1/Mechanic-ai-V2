@@ -5,6 +5,7 @@ from app.core.db import get_connection
 from app.ingestion.extract import extract_pages
 from app.ingestion.chunk import chunk_page
 from app.ingestion.embed import embed_texts
+from app.ingestion.quality import is_index_noise
 
 MIN_WORDS = 20        # drop fragments: a 1-word chunk is noise, not context
 
@@ -34,7 +35,11 @@ def ingest(pdf_path: str, title: str) -> None:
                         (title, pdf_path))
             doc_id = cur.fetchone()[0]
             rows = [(doc_id, i, c["content"],
-                     Json({"page": c["page"], "local_index": c["local_index"]}), v)
+                     Json({"page": c["page"], "local_index": c["local_index"],
+                           # Flagged, not dropped, so a bad heuristic stays
+                           # auditable and chunk ids stay stable for the eval set.
+                           **({"noise": True} if is_index_noise(c["content"]) else {})}),
+                     v)
                     for i, (c, v) in enumerate(zip(chunks, vectors))]  # zip pairs them up
             cur.executemany(                                # one call, many inserts
                 "INSERT INTO chunks (document_id, chunk_index, content, metadata, embedding)"

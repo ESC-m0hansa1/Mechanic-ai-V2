@@ -15,9 +15,12 @@ def dense_search(query: str, k: int = 5) -> list[dict]:
 
     # `<=>` is pgvector's COSINE DISTANCE operator (0 = identical, 2 = opposite).
     # Since our vectors are normalized, similarity = 1 - distance.
+    # The WHERE clause drops table-of-contents chunks (app/ingestion/quality.py).
+    # IS DISTINCT FROM handles NULL: a chunk with no "noise" key must still match.
     sql = """
         SELECT id, content, metadata, 1 - (embedding <=> %s) AS score
         FROM chunks
+        WHERE (metadata->>'noise') IS DISTINCT FROM 'true'
         ORDER BY embedding <=> %s   -- DB does the nearest-neighbour sort, not Python
         LIMIT %s;
     """

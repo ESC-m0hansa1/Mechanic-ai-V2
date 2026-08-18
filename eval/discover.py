@@ -5,7 +5,8 @@ answer with an artefact behind it. Two filters matter here:
 
 * the manual's table of contents survived ingestion as dotted-leader chunks
   ("Engine oil . . . . . P. 560"), which look relevant to a keyword scan but
-  answer nothing - so anything mostly dots/digits is dropped from candidates;
+  answer nothing - so they are hidden from candidates using the same filter
+  retrieval uses (app/ingestion/quality.py);
 * the PDF uses private-use glyphs for its icons, which a Windows cp1252 console
   cannot print, so text is forced to ASCII before display, not before storage.
 
@@ -15,6 +16,7 @@ answer with an artefact behind it. Two filters matter here:
 import re
 
 from app.core.db import get_connection
+from app.ingestion.quality import is_index_noise
 
 TERMS = [
     "engine oil", "tire pressure", "spare tire", "jack", "wiper blade",
@@ -25,13 +27,10 @@ TERMS = [
     "tire rotation", "break-in", "immobilizer", "cruise control", "airbag",
 ]
 
-# A chunk is TOC/index noise if this much of it is dots, digits and spaces.
-NOISE_RATIO = 0.35
-
-
-def is_noise(text: str) -> bool:
-    filler = sum(ch in ". \t\n0123456789" for ch in text)
-    return filler / max(len(text), 1) > NOISE_RATIO
+# Candidate filtering reuses the production heuristic (app/ingestion/quality.py)
+# so discovery hides exactly the chunks retrieval will refuse to return - no
+# second, drifting definition of "noise" living in the eval package.
+is_noise = is_index_noise
 
 
 def ascii_only(text: str) -> str:
