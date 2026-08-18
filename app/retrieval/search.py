@@ -9,11 +9,13 @@ change, and the eval harness can measure every strategy through one interface.
 from app.core.config import settings
 from app.retrieval.dense import dense_search
 from app.retrieval.hybrid import hybrid_search
+from app.retrieval.rerank import reranked_search
 
 # Populated as strategies land: dense (C4), hybrid (C6), reranked (C7).
 STRATEGIES = {
-    "dense": dense_search,      # baseline: vector similarity only
-    "hybrid": hybrid_search,    # dense + BM25 fused with Reciprocal Rank Fusion
+    "dense": dense_search,        # baseline: vector similarity only
+    "hybrid": hybrid_search,      # dense + BM25 fused with Reciprocal Rank Fusion
+    "reranked": reranked_search,  # hybrid candidates reordered by a cross-encoder
 }
 
 

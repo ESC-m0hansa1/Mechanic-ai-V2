@@ -1,0 +1,17 @@
+{
+  "strategy": "reranked",
+  "k": 5,
+  "answerable_questions": 24,
+  "unanswerable_questions": 4,
+  "hit_at_1": 0.75,
+  "hit_at_3": 0.958,
+  "hit_at_k": 1.0,
+  "recall_at_k": 0.896,
+  "mrr": 0.856,
+  "latency_p50_ms": 609.3,
+  "latency_p95_ms": 723.2,
+  "refusal_threshold": -3.5963,
+  "refusal_accuracy": 1.0,
+  "top1_answerable_mean": 5.0242,
+  "top1_unanswerable_mean": -8.3748
+}
