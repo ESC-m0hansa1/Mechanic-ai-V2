@@ -27,10 +27,14 @@ class SourceChunk(BaseModel):
 
 
 class AskResponse(BaseModel):
-    """What /ask returns."""
+    """What /api/ask returns."""
 
     question: str
     answer: str
+    # True when the model reported the excerpts do not contain the answer.
+    # Computed server-side by comparing against the one canonical IDK string, so
+    # the frontend never has to string-match on prose it does not own.
+    refused: bool
     sources: list[SourceChunk]
     retrieval_ms: int
     total_ms: int

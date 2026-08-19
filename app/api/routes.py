@@ -1,4 +1,4 @@
-"""The /ask endpoint: retrieve -> prompt -> generate -> return answer + sources."""
+"""The /api/ask endpoint: retrieve -> prompt -> generate -> return answer + sources."""
 
 import logging
 import time
@@ -8,11 +8,13 @@ from starlette.concurrency import run_in_threadpool
 
 from app.api.schemas import AskRequest, AskResponse, SourceChunk
 from app.core.config import settings
-from app.generation.llm import LLMError, answer
+from app.generation.llm import IDK, LLMError, answer
 from app.retrieval.search import search
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+# Every endpoint lives under /api so the built SPA can own "/" without the two
+# route tables ever competing. Changing this one string moves the whole API.
+router = APIRouter(prefix="/api", tags=["rag"])
 
 
 @router.post("/ask", response_model=AskResponse)
@@ -42,20 +44,24 @@ async def ask(req: AskRequest) -> AskResponse:
         raise HTTPException(status_code=502, detail="language model unavailable")
 
     total_ms = int((time.perf_counter() - t0) * 1000)
+    # IDK is a module constant in llm.py precisely so this comparison is not a
+    # magic string duplicated in two places.
+    refused = text.strip() == IDK
     logger.info(
-        "answered question=%r hits=%d retrieval_ms=%d total_ms=%d",
-        req.question, len(hits), retrieval_ms, total_ms,
+        "answered question=%r hits=%d refused=%s retrieval_ms=%d total_ms=%d",
+        req.question, len(hits), refused, retrieval_ms, total_ms,
     )
 
     return AskResponse(
         question=req.question,
         answer=text,
+        refused=refused,
         sources=[
             SourceChunk(
                 chunk_id=h["id"],
                 page=h["metadata"]["page"],
                 score=round(float(h["score"]), 4),
-                preview=h["content"][:200],
+                preview=h["content"][:300],
             )
             for h in hits
         ],

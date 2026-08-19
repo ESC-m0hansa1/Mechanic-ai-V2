@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     app_name: str                 # required: missing => startup error
     app_port: int = 8000
     log_level: str = "INFO"
+    # Browser origins allowed to call the API. In production the SPA is served
+    # from this same origin and this list is irrelevant; it exists for the Vite
+    # dev server on :5173.
+    #
+    # Declared as a plain str, not list[str], on purpose: pydantic-settings
+    # JSON-decodes complex types coming from the environment, so a list field
+    # would demand CORS_ORIGINS='["http://a","http://b"]' and blow up with a
+    # SettingsError on the comma-separated form everyone actually writes.
+    cors_origins_csv: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # --- database ----------------------------------------------------------
     database_url: str             # postgresql://user:pass@host:port/db
@@ -57,6 +66,11 @@ class Settings(BaseSettings):
     # retriever nominating 10 is what lets a chunk both of them rank mid-list
     # beat one that only a single retriever loves.
     fusion_depth: int = 10
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """CORS_ORIGINS as a list; empty string means 'same-origin only'."""
+        return [o.strip() for o in self.cors_origins_csv.split(",") if o.strip()]
 
 
 # One shared instance: .env is read once at import, not per request.
