@@ -1,3 +1,13 @@
+---
+title: Mechanic AI
+emoji: 🔧
+colorFrom: gray
+colorTo: yellow
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # Mechanic AI
 
 A retrieval-augmented diagnostic assistant over a **real** vehicle manual — the
