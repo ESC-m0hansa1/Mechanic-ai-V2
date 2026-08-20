@@ -1,0 +1,24 @@
+# Everything here either bloats the build context or must never reach an image.
+.git
+.gitignore
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+
+# Secrets. The image gets configuration from the environment at run time; a key
+# baked into a layer is a key that leaks with the image.
+.env
+
+# Installed inside stage 1 from the lockfile, and never needed at runtime.
+frontend/node_modules
+frontend/dist
+
+# Dev-only.
+.claude
+practice
+docs
+tests
+eval/results
+HANDOFF.md
+*.md

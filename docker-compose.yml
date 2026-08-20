@@ -1,15 +1,44 @@
 services:
-  db:                                  # service name; we can refer to it as "db"
+  db:
     image: pgvector/pgvector:pg16      # Postgres 16 with the vector extension prebuilt
-    container_name: mechanic_db        # fixed name so commands are predictable
-    environment:                       # these configure Postgres on first boot
+    container_name: mechanic_db
+    environment:
       POSTGRES_USER: mechanic          # dev-only creds (NOT for production)
       POSTGRES_PASSWORD: mechanic
-      POSTGRES_DB: mechanic            # auto-creates a database with this name
+      POSTGRES_DB: mechanic
     ports:
-      - "5433:5432"                    # HOST:CONTAINER — reach the DB at localhost:5432
+      - "5433:5432"                    # HOST:CONTAINER - 5433 because a native
+                                       # Postgres usually already owns 5432
     volumes:
-      - pgdata:/var/lib/postgresql/data  # persist DB files in a named volume
+      - pgdata:/var/lib/postgresql/data
+      # Runs once, on an empty data directory: creates the extension and the
+      # chunks table. Re-running `up` does not re-run it.
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      # `app` waits on this. Without it, compose only guarantees the container
+      # STARTED, not that Postgres finished initialising - and the app would lose
+      # that race about half the time.
+      test: ["CMD-SHELL", "pg_isready -U mechanic -d mechanic"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: mechanic_app
+    # The API key comes from .env, which is git-ignored and never copied into the
+    # image (see .dockerignore).
+    env_file: .env
+    environment:
+      # Overrides the .env value: inside the compose network the database is the
+      # service name on its native port, not localhost:5433.
+      DATABASE_URL: postgresql://mechanic:mechanic@db:5432/mechanic
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
-  pgdata:                              # declares the named volume used above
+  pgdata:
