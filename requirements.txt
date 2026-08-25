@@ -9,6 +9,10 @@ pypdf==5.1.0
 sentence-transformers==3.3.1
 # Postgres driver + pgvector type adapter for Python
 psycopg[binary]==3.2.3
+# Connection pooling. Separate package with its own version line, so it is
+# pinned here rather than hidden behind the psycopg[pool] extra. Needed because
+# the production database is in another region: see app/core/db.py.
+psycopg-pool==3.2.4
 pgvector==0.3.6
 httpx==0.28.1
 # BM25 keyword scoring (app/retrieval/bm25.py). ~200 lines of pure Python, no

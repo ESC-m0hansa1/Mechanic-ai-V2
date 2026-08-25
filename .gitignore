@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .env
 *.log
+neon_url.txt
+.env.bak
+hf_token.txt

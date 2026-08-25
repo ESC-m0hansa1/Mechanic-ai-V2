@@ -232,6 +232,12 @@ test greps the response body to prove the API key never appears in it.
 - **BM25 is an in-process index** rebuilt at startup. Correct for 1110 chunks;
   at millions the keyword side belongs in Postgres as a `tsvector` + GIN index,
   next to the vectors.
+- **Latency is dominated by distance to the database, not by the database.**
+  Connections are pooled (`app/core/db.py`) because retrieval makes two or three
+  queries per request and each new connection costs a TLS plus SCRAM handshake —
+  several round trips. Measured from a laptop in India against a Neon instance in
+  `us-east-2`, that was 6.5 s per unpooled connection and 1.2 s pooled; deployed
+  next to the database it is milliseconds. Run the app in the database's region.
 - **Free-tier LLM.** Fine for a public Toyota manual. Free tiers generally license
   the provider to train on submitted data, which would disqualify it for
   proprietary content.
