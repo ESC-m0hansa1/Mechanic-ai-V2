@@ -33,10 +33,19 @@ RUN npm run build            # -> /ui/dist
 # use, so the wheel comes from PyTorch's CPU index explicitly.
 FROM python:3.12-slim AS exporter
 
+# HF_HOME is the checkpoint download cache; it is discarded with this stage.
 ENV PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/opt/hf                  # checkpoint download cache, discarded with the stage
+    HF_HOME=/opt/hf
 
 WORKDIR /build
+# CPU-only torch FIRST, from PyTorch's own index. This ordering is the single
+# most important line in the stage: `pip install torch` on Linux resolves to the
+# CUDA build and drags in ~2.5 GB of NVIDIA libraries a CPU host can never use.
+# --index-url (not --extra-index-url) so PyPI is not consulted for torch at all;
+# with both indexes live pip picks by version and would take the CUDA wheel.
+RUN pip install --no-cache-dir torch==2.13.0 \
+      --index-url https://download.pytorch.org/whl/cpu
+
 COPY requirements.txt requirements-export.txt ./
 RUN pip install --no-cache-dir -r requirements-export.txt
 

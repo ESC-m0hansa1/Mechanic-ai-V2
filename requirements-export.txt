@@ -8,7 +8,10 @@
 #   python scripts/export_onnx.py
 #   python scripts/check_parity.py     # asserts onnx == torch numerically
 -r requirements.txt
---extra-index-url https://download.pytorch.org/whl/cpu
+# Install this from PyTorch's CPU index, NOT PyPI:
+#   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+# PyPI's linux torch is the CUDA build (~2.5 GB of NVIDIA libraries that a
+# CPU host can never use). The Dockerfile's exporter stage does this first.
 torch==2.13.0
 transformers==4.57.6
 # check_parity.py compares against the original stack, so it needs the thing
