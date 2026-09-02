@@ -1,10 +1,15 @@
 # syntax=docker/dockerfile:1
 #
-# Two stages, because the frontend's toolchain has no business in the runtime
-# image. Node builds the SPA to static files; the Python image copies those files
-# and serves them. Nothing Node-shaped survives into production - no node_modules,
-# no Node process - which is why "one container behind one public URL" still holds
-# even though the UI is React.
+# Three stages, because neither the frontend's toolchain nor the model exporter's
+# has any business in the runtime image.
+#
+#   frontend  Node builds the SPA to static files
+#   exporter  PyTorch converts both checkpoints to ONNX graphs
+#   runtime   Python serves the static files and the ONNX graphs
+#
+# Nothing Node-shaped and nothing torch-shaped survives into production, which is
+# why "one container behind one public URL" still holds even though the UI is
+# React - and why the image fits a 512 MB service (see stage 3).
 
 # ---------- stage 1: build the SPA ----------
 FROM node:22-alpine AS frontend
@@ -21,7 +26,28 @@ COPY frontend/ ./
 RUN npm run build            # -> /ui/dist
 
 
-# ---------- stage 2: runtime ----------
+# ---------- stage 2: export the models to ONNX ----------
+# This stage exists purely so torch never reaches the runtime image. It is also
+# where the CUDA trap lives: a plain `pip install torch` on Linux resolves to the
+# GPU build and drags in ~2.5 GB of NVIDIA libraries that a CPU host can never
+# use, so the wheel comes from PyTorch's CPU index explicitly.
+FROM python:3.12-slim AS exporter
+
+ENV PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/opt/hf                  # checkpoint download cache, discarded with the stage
+
+WORKDIR /build
+COPY requirements.txt requirements-export.txt ./
+RUN pip install --no-cache-dir -r requirements-export.txt
+
+COPY scripts/export_onnx.py ./scripts/
+# Downloads both checkpoints and traces them to ONNX. Weights are fp32, matching
+# torch's arithmetic, because the retrieval thresholds in eval/ are calibrated
+# against torch scores and int8 quantization would move them.
+RUN python scripts/export_onnx.py --out /build/models/onnx
+
+
+# ---------- stage 3: runtime ----------
 FROM python:3.12-slim AS runtime
 
 # PYTHONDONTWRITEBYTECODE: no .pyc litter in a layer that is read-only anyway.
@@ -29,43 +55,35 @@ FROM python:3.12-slim AS runtime
 # buffer, which is the difference between debuggable and not.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/opt/models
+    PIP_NO_CACHE_DIR=1
+# The target platform allocates a fraction of a CPU. Letting ONNX Runtime spawn
+# one thread per visible core there produces threads contending for a slice none
+# of them can fill, which is slower than staying single-threaded. Override to 0
+# (ORT's default) when running on a real box.
+ENV ONNX_INTRA_THREADS=1
 
 WORKDIR /srv
 
-# CPU-only torch, installed BEFORE requirements.txt and from PyTorch's own index.
-# This is the single biggest decision in this file: `pip install
-# sentence-transformers` on Linux resolves torch to the CUDA build and drags in
-# ~2.5 GB of NVIDIA libraries that can never be used on a CPU host. Pinning the
-# +cpu wheel first means the later resolve sees torch as already satisfied.
-RUN pip install --no-cache-dir torch==2.5.1 \
-      --index-url https://download.pytorch.org/whl/cpu
-
+# No torch here - that is the entire point of stage 2. Measured resident memory
+# of this server on the old sentence-transformers stack was 509 MB against a
+# 512 MB cap, and only ~139 MB of it was model weights; the rest was torch and
+# transformers being imported. See app/core/onnx_backend.py.
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Bake the model weights into the image (~220 MB). The alternative is downloading
-# them on first boot, which makes startup depend on Hugging Face being reachable,
-# adds a minute to a cold start, and re-downloads on every new container. Baking
-# them makes the image bigger and the runtime deterministic; for a service that
-# scales to a handful of instances that is the right side of the trade.
-RUN python - <<'PY'
-from sentence_transformers import CrossEncoder, SentenceTransformer
-SentenceTransformer("BAAI/bge-small-en-v1.5")
-CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-PY
 
 COPY app/ ./app/
 COPY eval/ ./eval/
 COPY data/ ./data/
+# The ONNX graphs and their tokenizers (~223 MB), baked in rather than downloaded
+# on first boot: baking makes startup independent of Hugging Face being
+# reachable, and a cold start does not re-fetch them on every new container.
+COPY --from=exporter /build/models/onnx ./models/onnx
 # The built SPA lands where app/main.py looks for it (FRONTEND_DIST).
 COPY --from=frontend /ui/dist ./frontend/dist
 
 # Run as a non-root user: a container escape should not land on root, and nothing
 # here needs write access to the filesystem.
 RUN useradd --create-home --uid 10001 appuser \
-    && chmod -R a+rX /opt/models \
     && chown -R appuser:appuser /srv
 USER appuser
 
@@ -75,11 +93,15 @@ EXPOSE 8000
 # but cannot reach its database is correctly reported as unhealthy.
 # start-period covers the warm-up (model load + BM25 index build).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
-    CMD python -c "import sys,urllib.request,json; \
-r=json.load(urllib.request.urlopen('http://localhost:8000/api/health')); \
+    CMD python -c "import os,sys,urllib.request,json; \
+r=json.load(urllib.request.urlopen('http://localhost:%s/api/health' % os.getenv('PORT','8000'))); \
 sys.exit(0 if r.get('status')=='ok' else 1)"
 
 # No --reload, no --workers. Reload is a dev feature. Workers stay at 1 because
 # each one would load its own copy of both models; horizontal scaling belongs to
 # the orchestrator, which can at least put them on different machines.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+#
+# Shell form, so $PORT is expanded at run time: hosted platforms assign the port
+# and inject it, and a hardcoded 8000 would make the service unreachable there.
+# The default keeps `docker compose up` and local runs working unchanged.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

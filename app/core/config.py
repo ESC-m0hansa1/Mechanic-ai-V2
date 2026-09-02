@@ -46,6 +46,16 @@ class Settings(BaseSettings):
     retrieval_strategy: Literal["dense", "hybrid", "reranked"] = "reranked"
     embedding_model: str = "BAAI/bge-small-en-v1.5"     # 384-dim, 512-token window
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Both models run on ONNX Runtime rather than PyTorch, because torch and
+    # transformers cost ~356 MB of resident memory just to import and the deploy
+    # target caps a service at 512 MB (see app/core/onnx_backend.py). These are
+    # the SAME checkpoints above, exported by scripts/export_onnx.py - the names
+    # stay because /api/health reports them and the export reads them.
+    onnx_model_dir: str = "models/onnx"
+    # 0 lets ONNX Runtime pick (one thread per core), which is right on a real
+    # box. Set to 1 where the platform allocates a fraction of a core: threads
+    # contending for a slice none of them can fill is slower than one thread.
+    onnx_intra_threads: int = 0
     # How many hybrid candidates the cross-encoder rescores. Swept 5/6/8/10/12/16/20/30
     # on the golden set (eval/sweep.py) and the result was monotone in the
     # OPPOSITE direction to the usual advice: MRR fell from 0.856 at 8 to 0.829

@@ -6,3 +6,7 @@ __pycache__/
 neon_url.txt
 .env.bak
 hf_token.txt
+
+# ONNX graphs are build artifacts (~223 MB): produced by scripts/export_onnx.py,
+# baked into the image by the Dockerfile. Never committed.
+models/onnx/

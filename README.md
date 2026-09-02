@@ -1,13 +1,3 @@
----
-title: Mechanic AI
-emoji: 🔧
-colorFrom: gray
-colorTo: yellow
-sdk: docker
-app_port: 8000
-pinned: false
----
-
 # Mechanic AI
 
 A retrieval-augmented diagnostic assistant over a **real** vehicle manual — the
@@ -16,11 +6,12 @@ answers only from the manual, cites the page for every claim, and refuses when
 the manual does not cover the question.
 
 **Live:** _(deploy pending)_ · **API docs:** `/docs` · **Stack:** FastAPI ·
-PostgreSQL + pgvector · sentence-transformers · React
+PostgreSQL + pgvector · ONNX Runtime · React
 
-The interesting part of this project is not that RAG works. It is that the
-evaluation harness twice contradicted the standard advice, and the code follows
-the measurements instead of the advice.
+The interesting part of this project is not that RAG works. It is that measuring
+it three times contradicted the standard advice — twice from the evaluation
+harness, once from a memory profiler — and the code follows the measurements
+instead of the advice.
 
 ---
 
@@ -61,7 +52,7 @@ final ranker — it is the candidate generator.
 
 ---
 
-## Two findings that contradicted the received wisdom
+## Three findings that contradicted the received wisdom
 
 **1. Hybrid retrieval made things worse, and the fix was not more tuning.**
 Adding BM25 dropped aggregate MRR from 0.757 to 0.733. The per-probe breakdown
@@ -87,6 +78,36 @@ A deeper pool hands a 6-layer MiniLM more plausible-but-wrong chunks to promote,
 and it takes the bait. Shipped at 8 — not the top scorer, because 5–10 are
 statistically indistinguishable at n=24 and pool=5 degenerates into pure
 reordering, losing the ability to recover anything hybrid ranked below the cut.
+
+**3. The models were never the memory problem. The framework was.**
+Deploying to a 512 MB free tier meant measuring where the memory actually went:
+
+| | RSS |
+|---|---|
+| baseline python | 14 MB |
+| + `torch` | 200 MB |
+| + `sentence_transformers` | 370 MB |
+| + bge-small loaded | 482 MB |
+| + cross-encoder loaded | **509 MB** |
+
+Three megabytes short, before FastAPI had even started. The obvious fix — drop
+the reranker, serve `dense` only — would not have worked either: 482 MB is
+already spent once the embedding model loads. Only ~139 MB of that 509 MB is
+model parameters. The other ~356 MB is torch and transformers *being imported*.
+
+So both models were exported to ONNX and torch was deleted from the runtime
+image (`scripts/export_onnx.py`, `app/core/onnx_backend.py`). Same checkpoints,
+so this had to be proven rather than assumed — `scripts/check_parity.py` compares
+the two stacks and asserts faithfulness: embeddings deviate by 1.2e-07 (cosine
+0.99999988), cross-encoder logits by 2.2e-06, and rank order is identical. The
+table above therefore still describes the deployed system.
+
+One further 143 MB came from turning ONNX Runtime's memory arena *off*. It
+pre-allocates a reusable pool to make allocation fast; measured here that cost
+143 MB — 28% of the entire budget — to save 4 ms on an 8-pair rerank. Outputs
+are bit-identical; an arena is an allocation strategy, not arithmetic.
+
+**337 MB, 175 MB of headroom**, and the reranker survives.
 
 ---
 

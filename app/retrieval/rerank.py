@@ -42,29 +42,36 @@ Worth it only if the measured ranking gain is real - see eval/results/reranked.j
 
 import logging
 
-from sentence_transformers import CrossEncoder
-
 from app.core.config import settings
+from app.core.onnx_backend import OnnxCrossEncoder
 from app.retrieval.hybrid import hybrid_search
 
 logger = logging.getLogger(__name__)
 
-_model: CrossEncoder | None = None       # lazy singleton, same reason as embed.get_model
+_model: OnnxCrossEncoder | None = None   # lazy singleton, same reason as embed.get_model
 
 
-def get_reranker() -> CrossEncoder:
+def get_reranker() -> OnnxCrossEncoder:
     """Load the cross-encoder once and reuse it.
 
     ms-marco-MiniLM-L-6-v2 is a 6-layer, ~90 MB model trained on MS MARCO
     passage ranking. It is the small end of the family on purpose: L-12 and the
     monoT5 rerankers score better on BEIR but cost 2-10x the latency, and this
     is a synchronous step inside a request, not a batch job.
+
+    It runs on ONNX Runtime rather than PyTorch - same checkpoint, ~356 MB less
+    resident memory, and the reason is in app/core/onnx_backend.py. The object
+    still exposes .predict(pairs, ...), so nothing below this line changed.
     """
     global _model
     if _model is None:
-        # max_length=512 matches the chunker's window: a longer limit would just
-        # pad, a shorter one would silently truncate the end of every chunk.
-        _model = CrossEncoder(settings.reranker_model, max_length=512)
+        # The 512-token truncation that used to be max_length=512 here is baked
+        # into the export and read back from runtime.json: a longer limit would
+        # just pad, a shorter one would silently truncate the end of every chunk.
+        _model = OnnxCrossEncoder(
+            f"{settings.onnx_model_dir}/reranker",
+            intra_threads=settings.onnx_intra_threads,
+        )
     return _model
 
 

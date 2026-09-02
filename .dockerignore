@@ -22,3 +22,7 @@ tests
 eval/results
 HANDOFF.md
 *.md
+
+# ONNX graphs are built INSIDE the image (exporter stage). A local copy from
+# scripts/export_onnx.py would otherwise ship 225 MB of build context for nothing.
+models/

@@ -1,0 +1,33 @@
+# Render Blueprint. The service can equally be created by hand in the dashboard;
+# this file exists so the deployment is reviewable and reproducible instead of
+# living only in someone's browser history.
+services:
+  - type: web
+    name: mechanic-ai
+    runtime: docker
+    plan: free
+    # Same region as the Neon database (us-east-2). This is not a detail: the
+    # request makes two or three round trips to Postgres, and measured from a
+    # laptop in India against this database each one cost ~350 ms. Co-locating
+    # turns the dominant cost in the whole request into single-digit ms.
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    # Render polls this before routing traffic. /api/health checks Postgres too,
+    # so a container that booted but cannot reach its database is never sent
+    # requests - it just fails the deploy visibly instead of serving errors.
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_NAME
+        value: Mechanic AI
+      # 512 MB and 0.1 CPU on the free plan. One thread beats several fighting
+      # over a tenth of a core - see app/core/onnx_backend.py.
+      - key: ONNX_INTRA_THREADS
+        value: "1"
+      - key: RETRIEVAL_STRATEGY
+        value: reranked
+      # sync:false => Render prompts for these and stores them encrypted; they
+      # are never written into this file or into git.
+      - key: DATABASE_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
