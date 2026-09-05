@@ -5,7 +5,7 @@ A retrieval-augmented diagnostic assistant over a **real** vehicle manual — th
 answers only from the manual, cites the page for every claim, and refuses when
 the manual does not cover the question.
 
-**Live:** _(deploy pending)_ · **API docs:** `/docs` · **Stack:** FastAPI ·
+**Live:** https://mechanic-ai-aw3t.onrender.com· **API docs:** `/docs` · **Stack:** FastAPI ·
 PostgreSQL + pgvector · ONNX Runtime · React
 
 The interesting part of this project is not that RAG works. It is that measuring
